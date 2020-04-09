@@ -64,11 +64,11 @@ def smooth(x,window_len=11,window='hanning'):
     return y
 
 
-data_colors = ['black','blue','forestgreen','red','purple','brown','grey','orange','cyan']
-fit_colors  =['grey','aqua','lightgreen','pink','orchid','burlywood','light_grey','yellow','cyan']
+data_colors = ['indigo','blue','forestgreen','red','magenta','brown','grey','orange','cyan','y']
+fit_colors  =['indigo','aqua','lightgreen','pink','magneta','burlywood','light_grey','yellow','cyan','yellow']
 
 state = 'California'
-county_list = ['Sonoma','Marin','Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
+county_list = ['Sonoma','Lake','Marin','Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
 num_counties = len(county_list)
 
 start_date = '2020-03-01'
@@ -169,7 +169,8 @@ date_to_plot= date_array[ok][1:]
 new_cases = tot_case_to_plot[1:] - tot_case_to_plot[0:-1]
 a = ax3.plot(date_to_plot,new_cases,color='black',label='Total Bay Area',linewidth=0.5,linestyle=':')
 
-new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
+if new_cases.shape[0] > 7:
+    new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
 a2 = ax3.plot(date_to_plot,new_cases,color='black',label='Total Bay Area')
 axs.append(a2)
 
@@ -180,8 +181,9 @@ for county_index,county in enumerate(county_list):
     date_to_plot= date_array[ok][1:]
     new_cases = case_to_plot[1:] - case_to_plot[0:-1]
     a = ax3.plot(date_to_plot,new_cases,color=data_colors[county_index],linewidth=0.5)
-
-    new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
+    print(new_cases.shape[0])
+    if new_cases.shape[0] > 7:
+        new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
     a2 = ax3.plot(date_to_plot,new_cases,color=data_colors[county_index],label=county)
     axs.append(a2)
 
@@ -190,7 +192,7 @@ plt.xticks(rotation=90)
 plt.subplots_adjust(bottom=0.20)
 plt.legend()
 
-county_list = ['Sonoma','Marin'] #,'Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
+county_list = ['Sonoma','Lake','Marin'] #,'Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
 fig4 = plt.figure(figsize=(12, 9))
 xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
 ax4 = fig4.add_subplot(111, title='COVID-19 Stats from NYT, New Cases', xlabel='Date', 
@@ -198,16 +200,15 @@ ax4 = fig4.add_subplot(111, title='COVID-19 Stats from NYT, New Cases', xlabel='
 axs=[]
 
 for county_index,county in enumerate(county_list):
-    if county == 'Santa Clara':
-        print()
+
     case_to_plot = case_array[:,county_index]
     ok = case_to_plot > 1
     case_to_plot = case_to_plot[ok]
     date_to_plot= date_array[ok][1:]
     new_cases = case_to_plot[1:] - case_to_plot[0:-1]
     a = ax4.plot(date_to_plot,new_cases,color=data_colors[county_index],linewidth=0.5)
-
-    new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
+    if new_cases.shape[0] > 7:
+        new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
     a2 = ax4.plot(date_to_plot,new_cases,color=data_colors[county_index],label=county)
     axs.append(a2)
 
@@ -216,5 +217,7 @@ plt.xticks(rotation=90)
 plt.subplots_adjust(bottom=0.20)
 plt.legend()
 
+
+print(case_array[:,1])
 plt.show()
 print()
