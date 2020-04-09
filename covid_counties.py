@@ -64,160 +64,178 @@ def smooth(x,window_len=11,window='hanning'):
     return y
 
 
-data_colors = ['indigo','blue','forestgreen','red','magenta','brown','grey','orange','cyan','y']
-fit_colors  =['indigo','aqua','lightgreen','pink','magneta','burlywood','light_grey','yellow','cyan','yellow']
-
+data_colors = ['indigo','blue','forestgreen','red','magenta','brown','grey','orange','cyan','y','yellowgreen']
+#fit_colors  =['indigo','aqua','lightgreen','pink','magneta','burlywood','light_grey','yellow','cyan','yellow']
+plot_path  = 'C:/Users/Mears/Dropbox/docs/covid/plots/'
 state = 'California'
-county_list = ['Sonoma','Lake','Marin','Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
-num_counties = len(county_list)
 
-start_date = '2020-03-01'
-end_date = '2020-05-01'
+ba_county_list = ['Sonoma','Lake','Marin','Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz','Solano']
+sc_county_list = ['Los Angeles','San Diego','Orange','Riverside','Ventura','San Bernardino']
+cv_county_list = ['Sacramento','San Joaquin','Stanislaus','Merced','Madera','Fresno','Tulare','Kern','Placer']
+county_groups = {'BayArea' : ba_county_list, 
+                 'SoCal'    : sc_county_list,
+                 'CentralValley' : cv_county_list}
 
-date_array = np.arange(np.datetime64(start_date), np.datetime64(end_date))
-num_days = date_array.shape[0]
+for county_group in county_groups.keys():
+    county_list = county_groups[county_group]
+    num_counties = len(county_list)
 
-death_array = np.zeros((num_days,num_counties),dtype = np.int32)
-case_array = np.zeros((num_days,num_counties),dtype = np.int32)
+    start_date = '2020-03-01'
+    end_date = '2020-05-01'
 
-url = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
-with  urllib.request.urlopen(url) as url_open:
-    csv_reader = csv.reader(io.TextIOWrapper(url_open, encoding='utf-8'), delimiter=',')
-    #line_count = np.zeros((num_counties),dtype='int32')
-    for row in csv_reader:
-        if row[0] == 'date':
-            continue
-        for county_index,county in enumerate(county_list):
-            if (row[1] == county) and (row[2] == state):
-                dt_days = (np.datetime64(row[0]) - np.datetime64(start_date)).astype('int')
-                if (dt_days >= 0) and (dt_days < num_days):
-                    print(county,dt_days,int(row[4]))
-                    case_array[dt_days,county_index]  = int(row[4])
-                    death_array[dt_days,county_index] = int(row[5])
+    date_array = np.arange(np.datetime64(start_date), np.datetime64(end_date))
+    num_days = date_array.shape[0]
 
-fig = plt.figure(figsize=(10, 6))
-ax = fig.add_subplot(111, title='COVID-19 Stats from NYT', 
-                     xlabel='Date', 
-                     ylabel=f'Number of cases')
+    death_array = np.zeros((num_days,num_counties),dtype = np.int32)
+    case_array = np.zeros((num_days,num_counties),dtype = np.int32)
 
-axs=[]
-tot_case = np.sum(case_array,axis=1)
-ok = tot_case > 1
-a = ax.plot(date_array[ok],tot_case[ok],color='black',label='Total Bay Area')
-for county_index,county in enumerate(county_list):
-    case_to_plot = case_array[:,county_index]
-    ok = case_to_plot > 1
-    
-    a = ax.plot(date_array[ok],case_to_plot[ok],color=data_colors[county_index],label=county)
-    axs.append(a)
+    url = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
+    with  urllib.request.urlopen(url) as url_open:
+        csv_reader = csv.reader(io.TextIOWrapper(url_open, encoding='utf-8'), delimiter=',')
+        #line_count = np.zeros((num_counties),dtype='int32')
+        for row in csv_reader:
+            if row[0] == 'date':
+                continue
+            for county_index,county in enumerate(county_list):
+                if (row[1] == county) and (row[2] == state):
+                    dt_days = (np.datetime64(row[0]) - np.datetime64(start_date)).astype('int')
+                    if (dt_days >= 0) and (dt_days < num_days):
+                        print(county,dt_days,int(row[4]))
+                        case_array[dt_days,county_index]  = int(row[4])
+                        death_array[dt_days,county_index] = int(row[5])
 
-ax.set_ylim(0,500)
-plt.xticks(rotation=90)
-plt.subplots_adjust(bottom=0.20)
-plt.legend()
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111, title='COVID-19 Stats from NYT', 
+                        xlabel='Date', 
+                        ylabel=f'Number of cases')
 
-axs=[]
-fig2 = plt.figure(figsize=(12, 9))
-xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
-ax2 = fig2.add_subplot(111, title='COVID-19 Stats from NYT, Fits last 7 days', xlabel='Date', 
-       ylabel=f"Number of cases",xlim=xlim)
+    axs=[]
+    tot_case = np.sum(case_array,axis=1)
+    ok = tot_case > 1
+    a = ax.plot(date_array[ok],tot_case[ok],color='black',label=f'Total {county_group}')
+    for county_index,county in enumerate(county_list):
+        case_to_plot = case_array[:,county_index]
+        ok = case_to_plot > 1
+        
+        a = ax.plot(date_array[ok],case_to_plot[ok],color=data_colors[county_index],label=county)
+        axs.append(a)
+
+    plt.xticks(rotation=90)
+    plt.subplots_adjust(bottom=0.20)
+    plt.legend()
+    last_day_of_data = np.datetime_as_string(date_array[ok][-1])
+    png_file = plot_path + f"{county_group}_linear_{last_day_of_data}.png"
+    fig.savefig(png_file)
+
+    axs=[]
+    fig2 = plt.figure(figsize=(12, 9))
+    xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
+    ax2 = fig2.add_subplot(111, title='COVID-19 Stats from NYT, Fits last 7 days', xlabel='Date', 
+        ylabel=f"Number of cases",xlim=xlim)
 
 
 
-tot_case = np.sum(case_array,axis=1)
-ok = tot_case > 1
-tot_to_plot = tot_case[ok]
-date_to_plot = date_array[ok]
-last_date = date_to_plot[-1]
-date_to_fit = (date_to_plot[-7:] - np.datetime64(last_date)).astype('float64')
-fit=np.polyfit(date_to_fit, np.log(tot_to_plot[-7:]), 1, w=np.sqrt(tot_to_plot[-7:]))
-order_of_mag_time = np.log(2)/fit[0]
-
-date_to_plot_for_fit = np.arange(last_date-7,last_date+10) - last_date 
-yfit=np.exp(fit[1])*np.exp(fit[0]*date_to_plot_for_fit.astype('float64'))
-a = ax2.semilogy(date_array[ok],tot_case[ok],color='black',label=f'Total Bay Area, doubling time: {order_of_mag_time:.2f} days')
-afit=ax2.semilogy(np.arange(last_date-7,last_date+10),yfit,color='grey',linestyle=':',linewidth=0.5)
-axs.append(a)
-
-for county_index,county in enumerate(county_list):
-    case_to_plot = case_array[:,county_index]
-    ok = case_to_plot > 1
+    tot_case = np.sum(case_array,axis=1)
+    ok = tot_case > 1
+    tot_to_plot = tot_case[ok]
     date_to_plot = date_array[ok]
-    case_to_plot = case_to_plot[ok]
     last_date = date_to_plot[-1]
     date_to_fit = (date_to_plot[-7:] - np.datetime64(last_date)).astype('float64')
-    fit=np.polyfit(date_to_fit, np.log(case_to_plot[-7:]), 1, w=np.sqrt(case_to_plot[-7:]))
+    fit=np.polyfit(date_to_fit, np.log(tot_to_plot[-7:]), 1, w=np.sqrt(tot_to_plot[-7:]))
     order_of_mag_time = np.log(2)/fit[0]
-    a = ax2.semilogy(date_to_plot,case_to_plot,color=data_colors[county_index],label=f'{county}, doubling time: {order_of_mag_time:.2f} days')
-    axs.append(a)
+
     date_to_plot_for_fit = np.arange(last_date-7,last_date+10) - last_date 
-    yfit=np.exp(fit[1])*np.exp(fit[0]*date_to_plot_for_fit.astype('float64'))   
-    afit=ax2.semilogy(np.arange(last_date-7,last_date+10),yfit,color=data_colors[county_index],linestyle=':',linewidth=0.5)
-plt.legend()
-plt.xticks(rotation=90)
-plt.subplots_adjust(bottom=0.20)
-plt.grid()
-fig3 = plt.figure(figsize=(12, 9))
-xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
-ax3 = fig3.add_subplot(111, title='COVID-19 Stats from NYT, New Cases', xlabel='Date', 
-       ylabel=f"Number of new cases",xlim=xlim)
-axs=[]
-tot_case = np.sum(case_array,axis=1)
-ok = tot_case > 1
-tot_case_to_plot = tot_case[ok]
-date_to_plot= date_array[ok][1:]
-new_cases = tot_case_to_plot[1:] - tot_case_to_plot[0:-1]
-a = ax3.plot(date_to_plot,new_cases,color='black',label='Total Bay Area',linewidth=0.5,linestyle=':')
+    yfit=np.exp(fit[1])*np.exp(fit[0]*date_to_plot_for_fit.astype('float64'))
+    a = ax2.semilogy(date_array[ok],tot_case[ok],color='black',label=f'Total {county_group}, doubling time: {order_of_mag_time:.2f} days')
+    afit=ax2.semilogy(np.arange(last_date-7,last_date+10),yfit,color='grey',linestyle=':',linewidth=0.5)
+    axs = [a]
 
-if new_cases.shape[0] > 7:
-    new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
-a2 = ax3.plot(date_to_plot,new_cases,color='black',label='Total Bay Area')
-axs.append(a2)
+    for county_index,county in enumerate(county_list):
+        case_to_plot = case_array[:,county_index]
+        ok = case_to_plot > 1
+        date_to_plot = date_array[ok]
+        case_to_plot = case_to_plot[ok]
+        last_date = date_to_plot[-1]
+        date_to_fit = (date_to_plot[-7:] - np.datetime64(last_date)).astype('float64')
+        fit=np.polyfit(date_to_fit, np.log(case_to_plot[-7:]), 1, w=np.sqrt(case_to_plot[-7:]))
+        order_of_mag_time = np.log(2)/fit[0]
+        a = ax2.semilogy(date_to_plot,case_to_plot,color=data_colors[county_index],label=f'{county}, doubling time: {order_of_mag_time:.2f} days')
+        axs.append(a)
+        date_to_plot_for_fit = np.arange(last_date-7,last_date+10) - last_date 
+        yfit=np.exp(fit[1])*np.exp(fit[0]*date_to_plot_for_fit.astype('float64'))   
+        afit=ax2.semilogy(np.arange(last_date-7,last_date+10),yfit,color=data_colors[county_index],linestyle=':',linewidth=0.5)
+    plt.legend()
+    plt.xticks(rotation=90)
+    plt.subplots_adjust(bottom=0.20)
+    plt.grid()
+    png_file = plot_path + f"{county_group}_log_{last_day_of_data}.png"
+    fig2.savefig(png_file)
 
-for county_index,county in enumerate(county_list):
-    case_to_plot = case_array[:,county_index]
-    ok = case_to_plot > 1
-    case_to_plot = case_to_plot[ok]
+    fig3 = plt.figure(figsize=(12, 9))
+    xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
+    ax3 = fig3.add_subplot(111, title='COVID-19 Stats from NYT, New Cases', xlabel='Date', 
+        ylabel=f"Number of new cases",xlim=xlim)
+    
+    tot_case = np.sum(case_array,axis=1)
+    ok = tot_case > 1
+    tot_case_to_plot = tot_case[ok]
     date_to_plot= date_array[ok][1:]
-    new_cases = case_to_plot[1:] - case_to_plot[0:-1]
-    a = ax3.plot(date_to_plot,new_cases,color=data_colors[county_index],linewidth=0.5)
-    print(new_cases.shape[0])
+    new_cases = tot_case_to_plot[1:] - tot_case_to_plot[0:-1]
+    a = ax3.plot(date_to_plot,new_cases,color='black',linewidth=0.5,linestyle=':')
+
     if new_cases.shape[0] > 7:
         new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
-    a2 = ax3.plot(date_to_plot,new_cases,color=data_colors[county_index],label=county)
-    axs.append(a2)
+    a2 = ax3.plot(date_to_plot,new_cases,color='black',label=f'Total {county_group}')
+    axs = [a2]
 
-ax3.set_ylim(0,250)
-plt.xticks(rotation=90)
-plt.subplots_adjust(bottom=0.20)
-plt.legend()
+    for county_index,county in enumerate(county_list):
+        case_to_plot = case_array[:,county_index]
+        ok = case_to_plot > 1
+        case_to_plot = case_to_plot[ok]
+        date_to_plot= date_array[ok][1:]
+        new_cases = case_to_plot[1:] - case_to_plot[0:-1]
+        a = ax3.plot(date_to_plot,new_cases,color=data_colors[county_index],linewidth=0.5)
+        print(new_cases.shape[0])
+        if new_cases.shape[0] > 7:
+            new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
+        a2 = ax3.plot(date_to_plot,new_cases,color=data_colors[county_index],label=county)
+        axs.append(a2)
 
-county_list = ['Sonoma','Lake','Marin'] #,'Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
-fig4 = plt.figure(figsize=(12, 9))
-xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
-ax4 = fig4.add_subplot(111, title='COVID-19 Stats from NYT, New Cases', xlabel='Date', 
-       ylabel=f"Number of new cases",xlim=xlim)
-axs=[]
+    
+    plt.xticks(rotation=90)
+    plt.subplots_adjust(bottom=0.20)
+    plt.legend()
+    png_file = plot_path + f"{county_group}_new_cases_{last_day_of_data}.png"
+    fig3.savefig(png_file)
+    
+    if county_group == 'BayArea':
+        county_list = ['Sonoma','Lake','Marin'] #,'Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz']
+        fig4 = plt.figure(figsize=(12, 9))
+        xlim = [datetime.date(year=2020,month=3,day=1),datetime.date(year=2020,month=4,day=15)]
+        ax4 = fig4.add_subplot(111, title='COVID-19 Stats from NYT, New Cases', xlabel='Date', 
+            ylabel=f"Number of new cases",xlim=xlim)
+        axs=[]
 
-for county_index,county in enumerate(county_list):
+        for county_index,county in enumerate(county_list):
 
-    case_to_plot = case_array[:,county_index]
-    ok = case_to_plot > 1
-    case_to_plot = case_to_plot[ok]
-    date_to_plot= date_array[ok][1:]
-    new_cases = case_to_plot[1:] - case_to_plot[0:-1]
-    a = ax4.plot(date_to_plot,new_cases,color=data_colors[county_index],linewidth=0.5)
-    if new_cases.shape[0] > 7:
-        new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
-    a2 = ax4.plot(date_to_plot,new_cases,color=data_colors[county_index],label=county)
-    axs.append(a2)
+            case_to_plot = case_array[:,county_index]
+            ok = case_to_plot > 1
+            case_to_plot = case_to_plot[ok]
+            date_to_plot= date_array[ok][1:]
+            new_cases = case_to_plot[1:] - case_to_plot[0:-1]
+            a = ax4.plot(date_to_plot,new_cases,color=data_colors[county_index],linewidth=0.5)
+            if new_cases.shape[0] > 7:
+                new_cases = smooth(new_cases,window_len=7,window='flat')[3:-3]
+            a2 = ax4.plot(date_to_plot,new_cases,color=data_colors[county_index],label=county)
+            axs.append(a2)
 
-ax4.set_ylim(0,20)
-plt.xticks(rotation=90)
-plt.subplots_adjust(bottom=0.20)
-plt.legend()
+        ax4.set_ylim(0,20)
+        plt.xticks(rotation=90)
+        plt.subplots_adjust(bottom=0.20)
+        plt.legend()
+        png_file = plot_path + f"NorthBay_new_cases_{last_day_of_data}.png"
+        fig4.savefig(png_file)
 
 
-print(case_array[:,1])
 plt.show()
 print()
