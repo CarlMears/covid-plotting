@@ -71,7 +71,7 @@ state = 'California'
 
 ba_county_list = ['Sonoma','Lake','Marin','Napa','Contra Costa','San Francisco','Alameda','San Mateo','Santa Clara','Santa Cruz','Solano']
 sc_county_list = ['Los Angeles','San Diego','Orange','Riverside','Ventura','San Bernardino']
-cv_county_list = ['Sacramento','San Joaquin','Stanislaus','Merced','Madera','Fresno','Tulare','Kern','Placer']
+cv_county_list = ['Sacramento','San Joaquin','Stanislaus','Merced','Madera','Fresno','Tulare','Kern','Placer','Yolo']
 county_groups = {'BayArea' : ba_county_list, 
                  'SoCal'    : sc_county_list,
                  'CentralValley' : cv_county_list}
